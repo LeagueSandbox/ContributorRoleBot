@@ -1,15 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ContributorRoleBot
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
+            ContribHelper.Init();
+            foreach (var keyValuePair in ContribHelper.ContributorActivity)
+            {
+                Console.WriteLine($"{keyValuePair.Key} is {(keyValuePair.Value ? "" : "in")}active.");
+            }
+
+            Console.ReadKey(true);
         }
     }
 }
