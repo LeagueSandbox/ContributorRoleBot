@@ -25,6 +25,14 @@ namespace ContributorRoleBot
 
             await ReplyAsync(reply);
         }
+
+        [Command("forcerefresh")]
+        [Summary("Connects the sender's github account with the given one, if approved by a reviewer.")]
+        public async Task ForceRefresh()
+        {
+            await Program.Update(true);
+            await Context.Message.AddReactionAsync(new Emoji("✅"));
+        }
     }
 
     public static class DiscordHelpers

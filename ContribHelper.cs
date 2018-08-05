@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using Octokit;
 
 namespace ContributorRoleBot
@@ -25,9 +21,9 @@ namespace ContributorRoleBot
             GitHubClient.Credentials = new Credentials(Auth.GITHUB_TOKEN);
         }
 
-        public static void InitOrRefresh()
+        public static void InitOrRefresh(bool force = false)
         {
-            if (DateTimeOffset.Now - _lastRefresh < TimeSpan.FromHours(1))
+            if (DateTimeOffset.Now - _lastRefresh < TimeSpan.FromHours(1) && !force)
             {
                 return;
             }
@@ -70,7 +66,6 @@ namespace ContributorRoleBot
                         continue;
                     }
 
-                    // We've came to the inevitable second request that slows everything down.
                     // A second request is required to get files, as getting all commits doesn't send the change list
                     var commit = GitHubClient.Repository.Commit.Get(OWNER, repo.Name, allCommits[i].Sha).Result;
 
@@ -86,11 +81,17 @@ namespace ContributorRoleBot
                         ContributorActivity[commit.Author.Login] = !isOldCommit;
                     }
                 }
+
                 Console.WriteLine("done.");
             }
 
             Console.WriteLine("All done.");
 
+            ReadContributorFile();
+        }
+
+        public static void ReadContributorFile()
+        {
             ContributorDiscords = ContributorActivity.ToDictionary(x => x.Key, y => 0ul);
             if (File.Exists("contributors.txt"))
             {
@@ -103,6 +104,18 @@ namespace ContributorRoleBot
                     }
                 }
             }
+        }
+
+        public static void FlushContributorFile()
+        {
+            var lines = new List<string>();
+
+            foreach (var entry in ContributorDiscords)
+            {
+                lines.Add($"{entry.Key} {entry.Value}");
+            }
+
+            File.WriteAllLines("contributors.txt", lines);
         }
     }
 }

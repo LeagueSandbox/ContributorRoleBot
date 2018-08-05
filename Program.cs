@@ -8,47 +8,78 @@ namespace ContributorRoleBot
     {
         static void Main()
         {
-            ContribHelper.InitOrRefresh();
-            DiscordHelpers.Login().GetAwaiter().GetResult();
-
-            Update().GetAwaiter().GetResult();
+            MainAsync().GetAwaiter().GetResult();
         }
 
-        static async Task Update()
+        static async Task MainAsync()
         {
+            ContribHelper.InitOrRefresh();
+            await DiscordHelpers.Login();
+
             while (true)
             {
-                ContribHelper.InitOrRefresh();
-                foreach (var keyValuePair in ContribHelper.ContributorActivity)
+                ContribHelper.ReadContributorFile();
+                await Update();
+                await Task.Delay(TimeSpan.FromHours(1));
+            }
+        }
+
+        public static async Task Update(bool force = false)
+        {
+            ContribHelper.InitOrRefresh(force);
+            foreach (var keyValuePair in ContribHelper.ContributorActivity)
+            {
+                Console.WriteLine($"{keyValuePair.Key} is {(keyValuePair.Value ? "" : "in")}active.");
+            }
+
+            var guild = DiscordHelpers.Client.GetGuild(DiscordHelpers.SERVER_ID);
+            var inactiveRole = guild.GetRole(DiscordHelpers.INACTIVE_CONTRIB_ROLE_ID);
+            var activeRole = guild.GetRole(DiscordHelpers.ACTIVE_CONTRIB_ROLE_ID);
+            await guild.DownloadUsersAsync();
+            foreach (var user in guild.Users)
+            {
+                var userId = user.Id;
+                if (ContribHelper.ContributorDiscords.ContainsValue(userId))
                 {
-                    Console.WriteLine($"{keyValuePair.Key} is {(keyValuePair.Value ? "" : "in")}active.");
+                    var githubName = ContribHelper.ContributorDiscords.First(x => x.Value == userId).Key;
+                    var isActive = ContribHelper.ContributorActivity[githubName];
 
-                    var guild = DiscordHelpers.Client.GetGuild(DiscordHelpers.SERVER_ID);
-                    var discordId = ContribHelper.ContributorDiscords[keyValuePair.Key];
-                    var user = guild.GetUser(discordId);
-                    if (user != null)
+                    if (!user.Roles.Contains(inactiveRole))
                     {
-                        var inactiveRole = guild.GetRole(DiscordHelpers.INACTIVE_CONTRIB_ROLE_ID);
-                        if (!user.Roles.Contains(inactiveRole))
-                        {
-                            await user.AddRoleAsync(inactiveRole);
-                        }
+                        Console.Write("A contributor is not marked as inactive contributor, adding role... ");
+                        await user.AddRoleAsync(inactiveRole);
+                        Console.WriteLine("done.");
+                    }
 
-                        var activeRole = guild.GetRole(DiscordHelpers.ACTIVE_CONTRIB_ROLE_ID);
-                        if (keyValuePair.Value && !user.Roles.Contains(activeRole))
-                        {
-                            await user.AddRoleAsync(activeRole);
-                        }
-                        else if (!keyValuePair.Value && user.Roles.Contains(activeRole))
-                        {
-                            await user.RemoveRoleAsync(activeRole);
-                        }
-
-                        Console.WriteLine($"Roles have been updated for {user.Username}");
+                    if (isActive && !user.Roles.Contains(activeRole))
+                    {
+                        Console.Write("An active contributor doesn't have active role, adding role... ");
+                        await user.AddRoleAsync(activeRole);
+                        Console.WriteLine("done.");
+                    }
+                    else if (!isActive && user.Roles.Contains(activeRole))
+                    {
+                        Console.Write("An inactive contributor is marked as active, removing role... ");
+                        await user.RemoveRoleAsync(activeRole);
+                        Console.WriteLine("done.");
                     }
                 }
+                else
+                {
+                    if (user.Roles.Contains(activeRole))
+                    {
+                        Console.Write("A non-contributor is marked as active contributor, removing role... ");
+                        await user.RemoveRoleAsync(activeRole);
+                        Console.WriteLine("done.");
+                    }
 
-                await Task.Delay(TimeSpan.FromHours(1));
+                    if (user.Roles.Contains(inactiveRole))
+                    {
+                        Console.Write("A non-contributor is marked as inactive contributor, removing role... ");
+                        await user.RemoveRoleAsync(inactiveRole);
+                        Console.WriteLine("done.");
+                    }
+                }
             }
         }
     }
