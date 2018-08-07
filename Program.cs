@@ -16,6 +16,8 @@ namespace ContributorRoleBot
             ContribHelper.InitOrRefresh();
             await DiscordHelpers.Login();
 
+            await Task.Delay(30000);
+
             while (true)
             {
                 ContribHelper.ReadContributorFile();
@@ -33,6 +35,13 @@ namespace ContributorRoleBot
             }
 
             var guild = DiscordHelpers.Client.GetGuild(DiscordHelpers.SERVER_ID);
+
+            if (guild == null)
+            {
+                Console.WriteLine("Turns out we are not in the discord server (or not logged in?)");
+                return;
+            }
+
             var inactiveRole = guild.GetRole(DiscordHelpers.INACTIVE_CONTRIB_ROLE_ID);
             var activeRole = guild.GetRole(DiscordHelpers.ACTIVE_CONTRIB_ROLE_ID);
             await guild.DownloadUsersAsync();
