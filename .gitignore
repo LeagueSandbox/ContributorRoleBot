@@ -259,3 +259,8 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# Custom things
+ContributorRoleBot-python/discordToken.txt
+ContributorRoleBot-python/githubToken.txt
+ContributorRoleBot-python/logs.txt
