@@ -5,6 +5,7 @@ import discord
 import asyncio
 
 DEBUG_ONLY = True
+INACTIVE_THRESHOLD = 15 # Defines how many days one has to be inactive to be counted inactive.
 
 GITHUB_TOKEN = ""
 DISCORD_TOKEN = ""
@@ -43,9 +44,9 @@ def InitOrRefreshActivity():
             if len(commitTldr.parents) > 1:
                 continue
 
-            # If our author is already marked as inactive and commit is +1 month old
+            # If our author is already marked as inactive and commit is old
             date = commitTldr.commit.author.date
-            isOldCommit = datetime.now() - date > timedelta(days=30)
+            isOldCommit = datetime.now() - date > timedelta(days=INACTIVE_THRESHOLD)
 
             if commitTldr.author != None and commitTldr.author.login in ContributorActivity.keys() and isOldCommit:
                 continue
@@ -64,7 +65,7 @@ def InitOrRefreshActivity():
             for file in files:
                 totalChanges += file.changes
 
-            if totalChanges <= 10:
+            if totalChanges < 10:
                 continue
 
             if commit.author != None:
@@ -174,7 +175,7 @@ async def Update():
                 print("done.")
 
 async def background_task():
-    log("Welcome!")
+    print("Welcome!")
     await Client.wait_until_ready()
 
     while True:
