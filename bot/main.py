@@ -1,4 +1,7 @@
-import os
+import sys
+import csv
+
+import traceback
 import discord
 import asyncio
 
@@ -6,208 +9,169 @@ from github import Github
 from datetime import datetime, timedelta
 
 from settings import (
-    GITHUB_TOKEN, DISCORD_TOKEN, ORGANIZATION
+    GITHUB_TOKEN, DISCORD_TOKEN, ORGANIZATION,
+    DISCORD_SERVER_ID, DISCORD_ACTIVE_ROLE_ID,
+    DISCORD_INACTIVE_ROLE_ID, DISCORD_NOTIFY_CHANNEL_ID,
+    INACTIVE_DAYS_THRESHOLD, DISCORD_ADMIN_ID
 )
 
-DEBUG_ONLY = True
-INACTIVE_THRESHOLD = 15  # Defines how many days one has to be inactive to be counted inactive.
 
-ContributorActivity = {}
-ContributorDiscords = {}
-GithubClient = Github(GITHUB_TOKEN)
+class GithubContributorReader(object):
 
+    @property
+    def organization(self):
+        if self._organization is None:
+            self._organization = self.client.get_organization(self.organization_name)
+        return self._organization
 
-def init_or_refresh_activity():
-    log(f"Fetching all repositories for {ORGANIZATION}")
-    repos = GithubClient.get_organization(ORGANIZATION).get_repos('public')
+    def __init__(self, organization_name, github_token):
+        self.organization_name = organization_name
+        self._organization = None
+        self.client = Github(github_token)
+        self.contributors = {}
 
-    for repo in repos:
-        allCommits = repo.get_commits()
-        message = "Iterating through {}'s commits... ".format(repo.name)
+    def store_contributor_last_commit(self, commit):
+        last_commit_date = self.contributors.get(commit.author.login, datetime.min)
+        if commit.commit.author.date > last_commit_date:
+            self.contributors[commit.author.login] = commit.commit.author.date
 
-        i = 0
-        for commitTldr in allCommits:
-            i += 1
-            print("\r{}{} ".format(message, i), end='')
+    def get_last_contribution_dates(self):
+        self.contributors = {}
 
-            # If our author is already marked as active
-            author_is_active = (
-                commitTldr.author is None
-                and commitTldr.author.login in ContributorActivity.keys()
-                and ContributorActivity[commitTldr.author.login]
-            )
-            if author_is_active:
-                continue
+        log(f"Fetching all repositories for {self.organization_name}...")
+        repositories = self.organization.get_repos("public")
 
-            # If commit is a merge commit
-            if len(commitTldr.parents) > 1:
-                continue
+        for repository in repositories:
+            log(f"Updating repository {repository.name}")
+            self.read_repository(repository)
 
-            # If our author is already marked as inactive and commit is old
-            date = commitTldr.commit.author.date
-            isOldCommit = datetime.now() - date > timedelta(days=INACTIVE_THRESHOLD)
+        log("Contributors fetched")
+        return self.contributors
 
-            if commitTldr.author is None and commitTldr.author.login in ContributorActivity.keys() and isOldCommit:
-                continue
+    def read_repository(self, repository):
+        contributors = repository.get_contributors()
+        for contributor in contributors:
+            self.read_contributor_commits(repository, contributor)
 
-            # A second request is required to get files, as getting all commits doesn't send the change list
-            commit = repo.get_commit(commitTldr.sha)
+    def read_contributor_commits(self, repository, contributor):
+        commits = repository.get_commits(author=contributor)
+        for commit in commits:
+            if self.is_commit_valid(commit):
+                self.store_contributor_last_commit(commit)
+                break
 
-            # If the commit only edits *.md files
-            files = commit.files
+    def is_commit_valid(self, commit):
+        # Commit is a merge commit
+        if len(commit.parents) > 1:
+            return False
 
-            if files is None and all(file.filename.endswith(".md") for file in files):
-                continue
-
-            # If total lines edited is less than 10
-            totalChanges = 0
-            for file in files:
-                totalChanges += file.changes
-
-            if totalChanges < 10:
-                continue
-
-            if commit.author is None:
-                ContributorActivity[commit.author.login] = not isOldCommit
-
-        print("done.")
-
-    print("All done.")
-    read_contributor_file()
+        return True
 
 
-def read_contributor_file():
-    keys = ContributorActivity.keys()
-    if os.path.exists("contributors.txt"):
-        lines = []
-        with open("contributors.txt", 'r') as f:
-            lines = f.readlines()
-        lines = [x.strip() for x in lines]
-        lines = list(filter(None, lines))
-        for line in lines:
-            split = line.split()
-            if split[0] in keys:
-                ContributorDiscords[split[0]] = split[1]
+class DiscordContributorBot(discord.Client):
+
+    def __init__(self, github_reader, usermap):
+        super(DiscordContributorBot, self).__init__()
+        self.loop.create_task(self.role_update_task())
+        self.github_reader = github_reader
+        self.usermap = usermap
+
+    @property
+    def guild(self):
+        return self.get_server(DISCORD_SERVER_ID)
+
+    @property
+    def notify_channel(self):
+        return self.get_channel(DISCORD_NOTIFY_CHANNEL_ID)
+
+    @property
+    def inactive_role(self):
+        return discord.utils.get(self.guild.roles, id=DISCORD_INACTIVE_ROLE_ID)
+
+    @property
+    def active_role(self):
+        return discord.utils.get(self.guild.roles, id=DISCORD_ACTIVE_ROLE_ID)
+
+    async def update_roles(self, contributors):
+        log("Updating roles")
+        if self.guild is None or self.guild.unavailable:
+            log("It seems like either we are not in the discord server or the server is down.\n")
+            return
+
+        members = list(self.guild.members)
+
+        for member in members:
+            await self.update_member(contributors, member)
+        log("Roles updated")
+
+    @asyncio.coroutine
+    async def on_error(self, event, *args, **kwargs):
+        message = args[0]
+        await self.send_message(message.channel, traceback.format_exc())
+
+    async def update_member(self, contributors, member):
+        inactive = False
+        active = False
+
+        github_name = self.usermap.get(member.id)
+        if github_name and github_name in contributors:
+            inactive = True
+
+            if contributors[github_name] + timedelta(days=INACTIVE_DAYS_THRESHOLD) > datetime.now():
+                active = True
+
+        await self.update_role(member, self.active_role, active)
+        await self.update_role(member, self.inactive_role, inactive)
+
+    async def update_role(self, member, role, should_be_in):
+        already_in = role in member.roles
+        if already_in and not should_be_in:
+            log(f"Removed role {role.name} from member {member.name}")
+            await self.remove_roles(member, role)
+            await self.send_message(self.notify_channel, f"Removed role {role.name} from {member.mention}")
+        if not already_in and should_be_in:
+            log(f"Added role {role.name} for member {member.name}")
+            await self.add_roles(member, role)
+            await self.send_message(self.notify_channel, f"Added role {role.name} to {member.mention}")
+
+    @asyncio.coroutine
+    async def on_message(self, message):
+        if message.author.id != DISCORD_ADMIN_ID:
+            return
+
+        if message.content.lower().startswith('!update_roles'):
+            contributors = self.github_reader.get_last_contribution_dates()
+            await self.update_roles(contributors)
+            await self.add_reaction(message, "✅")
+
+    async def role_update_task(self):
+        await self.wait_until_ready()
+
+        while True:
+            contributors = self.github_reader.get_last_contribution_dates()
+            await self.update_roles(contributors)
+            await asyncio.sleep(900)  # 15 minutes
 
 
-def flush_contributor_file():
-    lines = []
-    for key, value in ContributorDiscords.items():
-        lines.append("{} {}".format(key, value))
-
-    with open("contributors.txt", 'w+') as file:
-        for line in lines:
-            file.write("{}\n".format(line))
+def log(message, end="\n"):
+    message = str(message)
+    sys.stdout.write(message + end)
+    sys.stdout.flush()
 
 
-DISCORD_SERVER_ID = "166860156506865665"
-DISCORD_ACTIVE_ROLE_ID = "167012523814551552"
-DISCORD_INACTIVE_ROLE_ID = "259634105019269130"
+def main():
+    usermap = {row[0]: row[1] for row in csv.reader(open("usermap.csv"))}
 
-Client = discord.Client()
-
-
-@Client.event
-async def on_message(message):
-    if message.content.lower().startswith('!printActivity'):
-        tmp = ""
-        if not DEBUG_ONLY:
-            tmp = await Client.send_message(
-                message.channel,
-                "Refreshing contributor activity, this *might* take a while..."
-            )
-        init_or_refresh_activity()
-        reply = ""
-        for key, value in ContributorActivity.items():
-            reply += "{} is {}active.\n".format(key, '' if value else 'in')
-
-        if not DEBUG_ONLY:
-            await Client.edit_message(tmp, reply)
-    elif message.content.lower().startswith('!forceRefresh'):
-        await update()
-        if not DEBUG_ONLY:
-            await Client.add_reaction(message, "✅")
+    github_reader = GithubContributorReader(
+        organization_name=ORGANIZATION,
+        github_token=GITHUB_TOKEN,
+    )
+    discord_bot = DiscordContributorBot(
+        github_reader=github_reader,
+        usermap=usermap,
+    )
+    discord_bot.run(DISCORD_TOKEN)
 
 
-async def update():
-    init_or_refresh_activity()
-    for key, value in ContributorActivity.items():
-        log("{} is {}active.\n".format(key, '' if value else 'in'))
-
-    guild = Client.get_server(DISCORD_SERVER_ID)
-
-    if guild is None or guild.unavailable:
-        log("It seems like either we are not in the discord server or server is down.\n")
-        return
-
-    inactiveRole = None
-    activeRole = None
-    for role in guild.roles:
-        if role.id == DISCORD_INACTIVE_ROLE_ID:
-            inactiveRole = role
-        elif role.id == DISCORD_ACTIVE_ROLE_ID:
-            activeRole = role
-
-    for user in guild.members:
-        userId = user.id
-
-        if userId in ContributorDiscords.values():
-            githubName = ""
-            for key, value in ContributorDiscords.items():
-                if value == userId:
-                    githubName = key
-                    break
-
-            isActive = ContributorActivity[githubName]
-
-            if inactiveRole not in user.roles:
-                log("A contributor ({}) is not marked as inactive contributor, adding role... ".format(user.name))
-                if not DEBUG_ONLY:
-                    await Client.add_roles(user, inactiveRole)
-                print("done.")
-
-            if isActive and activeRole not in user.roles:
-                log("An active contributor ({}) doesn't have active role, adding role... ".format(user.name))
-                if not DEBUG_ONLY:
-                    await Client.add_roles(user, activeRole)
-                print("done.")
-            elif not isActive and activeRole in user.roles:
-                log("An inactive contributor ({}) is marked as active, removing role... ".format(user.name))
-                if not DEBUG_ONLY:
-                    await Client.remove_roles(user, activeRole)
-                print("done.")
-        else:
-            if activeRole in user.roles:
-                log("A non-contributor ({}) is marked as active contributor, removing role... ".format(user.name))
-                if not DEBUG_ONLY:
-                    await Client.remove_roles(user, activeRole)
-                print("done.")
-
-            if inactiveRole in user.roles:
-                log("A non-contributor ({}) is marked as inactive contributor, removing role... ".format(user.name))
-                if not DEBUG_ONLY:
-                    await Client.remove_roles(user, activeRole)
-                print("done.")
-
-
-async def background_task():
-    print("Welcome!")
-    await Client.wait_until_ready()
-
-    while True:
-        read_contributor_file()
-        await update()
-        await asyncio.sleep(900)  # 15 minutes
-
-
-def log(text, fileOnly=False):
-    text = "[{}] {}".format(datetime.now(), text)
-    with open("logs.txt", 'a+') as log_file:
-        log_file.write(text if text.endswith('\n') else '{}\n'.format(text))
-
-    if not fileOnly:
-        print(text, end='')
-
-
-Client.loop.create_task(background_task())
-Client.run(DISCORD_TOKEN)
+if __name__ == "__main__":
+    main()
