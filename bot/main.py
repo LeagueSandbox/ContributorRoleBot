@@ -1,22 +1,16 @@
-from github import Github
-from datetime import datetime, timedelta
 import os
 import discord
 import asyncio
 
+from github import Github
+from datetime import datetime, timedelta
+
+from settings import (
+    GITHUB_TOKEN, DISCORD_TOKEN, ORGANIZATION
+)
+
 DEBUG_ONLY = True
 INACTIVE_THRESHOLD = 15  # Defines how many days one has to be inactive to be counted inactive.
-
-GITHUB_TOKEN = ""
-DISCORD_TOKEN = ""
-
-with open('githubToken.txt', 'r') as content:
-    GITHUB_TOKEN = content.read()
-
-with open('discordToken.txt', 'r') as content:
-    DISCORD_TOKEN = content.read()
-
-OWNER = "LeagueSandbox"
 
 ContributorActivity = {}
 ContributorDiscords = {}
@@ -24,9 +18,8 @@ GithubClient = Github(GITHUB_TOKEN)
 
 
 def init_or_refresh_activity():
-    print("Fetching all org repos... ", end='')
-    repos = GithubClient.get_organization(OWNER).get_repos('public')
-    print("done.")
+    log(f"Fetching all repositories for {ORGANIZATION}")
+    repos = GithubClient.get_organization(ORGANIZATION).get_repos('public')
 
     for repo in repos:
         allCommits = repo.get_commits()
