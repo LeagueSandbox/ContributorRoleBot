@@ -107,7 +107,10 @@ class DiscordContributorBot(discord.Client):
     @asyncio.coroutine
     async def on_error(self, event, *args, **kwargs):
         message = args[0]
-        await self.send_message(message.channel, traceback.format_exc())
+        await self.send_message(message.channel, f"```{traceback.format_exc()}```")
+
+    async def log_exception(self):
+        await self.send_message(self.notify_channel, f"```{traceback.format_exc()}```")
 
     async def update_member(self, contributors, member):
         inactive = False
@@ -148,8 +151,14 @@ class DiscordContributorBot(discord.Client):
         await self.wait_until_ready()
 
         while True:
-            contributors = self.github_reader.get_last_contribution_dates()
-            await self.update_roles(contributors)
+            try:
+                contributors = self.github_reader.get_last_contribution_dates()
+                await self.update_roles(contributors)
+            except Exception:
+                try:
+                    await self.log_exception()
+                except Exception:
+                    pass
             await asyncio.sleep(900)  # 15 minutes
 
 
