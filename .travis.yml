@@ -1,0 +1,39 @@
+sudo: 'required'
+
+services:
+  - 'docker'
+
+env:
+  global:
+    - IMAGE=leaguesandbox/contributor-role-bot
+    - DOCKER_USERNAME=leaguesandbox
+    - secure: "oVs6ftexLyxLOYo93CucTxhVYwNOWrmDf4WEo6EEYOZ0ONUy5i7ox/yaYD3Gvkhn74vgid3I0UtvDCoKpxu3jrw8o5M+JQFLrvpd2pppH8u+OMLywY7rhCiRZt5C7eHFwPJ1gWxXJlB/y4figHfE/6Mr7mUOvqdkY8I58Tue0n9qr3uxQuYvLlZanh6LyL0AVXqxTmM122MDBnhQjTqIF9/pZxmR5g3mdiAwWbX2Int2kMkrl3mnN88IZvkTeMQkWySuCs2gsDkMbsMzFHYV7QldjLndmLermgWa7xeuWuSzqcx3YyuNJ5+IZHhCI7MzwI2ShhAKsvQ56Z2NtS/HV2GVxMZw869WVNacDzbEwjNb3sXajFdWHQGknWMrUewnRehybZNFpTlHOiXSzqemm+lxb1FZrsNG8pA2aAqmTWkSBQyL43fa5HJJfRPYzgenf00Azt7dMmsOwn+FRYBTQe1jSJQNAQcsqbWt82PBYEbb3IJQW2MHePnUEnq1HCZ8BfgUhl6cssoge8DWi+oRol+D0zEbDdDXpMQJvtu6/vR0teorUYCyD7ny2auErg0+ejzCxTV+b5WO+dRxX8EBbB0D3Cft32mASmCjaEcvSyLrzY7TSBCjw2N0XRbyFW0jBMiQjMOAIVyo02Eoo6G7kP0zLS7fGoUvvhbW1SaCjrk="
+
+jobs:
+  include:
+    - stage: test
+      script:
+        - docker build .
+    - stage: build
+      script:
+        - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
+        - docker build --tag $IMAGE:commit-$TRAVIS_COMMIT .
+        - docker push $IMAGE:commit-$TRAVIS_COMMIT
+    # - stage: deploy
+    #   script:
+    #     TODO: Install gcloud SDK
+    #     TODO: Install kubectl
+    #     - gcloud config set-project league-sandbox
+    #     - gcloud container clusters get-credentials bots --zone europe-north1-a
+    #     - envsubst '${TRAVIS_COMMIT}' < deployment.yaml.template > deployment.yaml
+    #     - kubectl apply -f deployment.yaml
+
+stages:
+  - test
+  - name: build
+    if: branch = master
+  # - name: deploy
+  #   if: branch = master
+
+notifications:
+  email: false

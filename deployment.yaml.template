@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contributor-role-bot-deployment
+spec:
+  selector:
+    matchLabels:
+      app: contributor-role-bot
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: contributor-role-bot
+    spec:
+      containers:
+      - name: contributor-role-bot
+        image: leaguesandbox/contributor-role-bot:commit-${TRAVIS_COMMIT}
+        env:
+          - name: ORGANIZATION
+            value: "LeagueSandbox"
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: contributor-role-bot
+                key: GITHUB_TOKEN
+          - name: DISCORD_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: contributor-role-bot
+                key: DISCORD_TOKEN
