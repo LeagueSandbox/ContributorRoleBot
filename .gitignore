@@ -2,6 +2,7 @@
 bot/discordToken.txt
 bot/githubToken.txt
 bot/logs.txt
+kubernetes/service-account.json
 **/.env
 **/venv/
 
