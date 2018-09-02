@@ -1,0 +1,6 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: contributor-role-bot
+  labels:
+    name: contributor-role-bot
