@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: contributor-role-bot-deployment
+  namespace: contributor-role-bot
 spec:
   selector:
     matchLabels:
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
       - name: contributor-role-bot
-        image: leaguesandbox/contributor-role-bot:commit-${TRAVIS_COMMIT}
+        image: leaguesandbox/contributor-role-bot:latest
         env:
           - name: ORGANIZATION
             value: "LeagueSandbox"
