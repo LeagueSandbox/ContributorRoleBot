@@ -16,9 +16,6 @@ jobs:
   - stage: test
     script:
     - docker build .
-    - echo $TRAVIS_EVENT_TYPE
-    - echo $TRAVIS_PULL_REQUEST
-    - echo $TRAVIS_PULL_REQUEST_BRANCH
   - stage: build
     script:
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
@@ -41,8 +38,8 @@ jobs:
 stages:
 - test
 - name: build
-  if: branch = master
+  if: branch = master AND type = push
 - name: deploy
-  if: branch = master
+  if: branch = master AND type = push
 notifications:
   email: false
