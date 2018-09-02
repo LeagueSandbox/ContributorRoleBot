@@ -1,39 +1,48 @@
-sudo: 'required'
-
+sudo: required
 services:
-  - 'docker'
-
+- docker
+cache:
+  directories:
+  - "$HOME/google-cloud-sdk/"
 env:
   global:
-    - IMAGE=leaguesandbox/contributor-role-bot
-    - DOCKER_USERNAME=leaguesandbox
-    - secure: "oVs6ftexLyxLOYo93CucTxhVYwNOWrmDf4WEo6EEYOZ0ONUy5i7ox/yaYD3Gvkhn74vgid3I0UtvDCoKpxu3jrw8o5M+JQFLrvpd2pppH8u+OMLywY7rhCiRZt5C7eHFwPJ1gWxXJlB/y4figHfE/6Mr7mUOvqdkY8I58Tue0n9qr3uxQuYvLlZanh6LyL0AVXqxTmM122MDBnhQjTqIF9/pZxmR5g3mdiAwWbX2Int2kMkrl3mnN88IZvkTeMQkWySuCs2gsDkMbsMzFHYV7QldjLndmLermgWa7xeuWuSzqcx3YyuNJ5+IZHhCI7MzwI2ShhAKsvQ56Z2NtS/HV2GVxMZw869WVNacDzbEwjNb3sXajFdWHQGknWMrUewnRehybZNFpTlHOiXSzqemm+lxb1FZrsNG8pA2aAqmTWkSBQyL43fa5HJJfRPYzgenf00Azt7dMmsOwn+FRYBTQe1jSJQNAQcsqbWt82PBYEbb3IJQW2MHePnUEnq1HCZ8BfgUhl6cssoge8DWi+oRol+D0zEbDdDXpMQJvtu6/vR0teorUYCyD7ny2auErg0+ejzCxTV+b5WO+dRxX8EBbB0D3Cft32mASmCjaEcvSyLrzY7TSBCjw2N0XRbyFW0jBMiQjMOAIVyo02Eoo6G7kP0zLS7fGoUvvhbW1SaCjrk="
-
+  - IMAGE=leaguesandbox/contributor-role-bot
+  - DOCKER_USERNAME=leaguesandbox
+  - secure: oVs6ftexLyxLOYo93CucTxhVYwNOWrmDf4WEo6EEYOZ0ONUy5i7ox/yaYD3Gvkhn74vgid3I0UtvDCoKpxu3jrw8o5M+JQFLrvpd2pppH8u+OMLywY7rhCiRZt5C7eHFwPJ1gWxXJlB/y4figHfE/6Mr7mUOvqdkY8I58Tue0n9qr3uxQuYvLlZanh6LyL0AVXqxTmM122MDBnhQjTqIF9/pZxmR5g3mdiAwWbX2Int2kMkrl3mnN88IZvkTeMQkWySuCs2gsDkMbsMzFHYV7QldjLndmLermgWa7xeuWuSzqcx3YyuNJ5+IZHhCI7MzwI2ShhAKsvQ56Z2NtS/HV2GVxMZw869WVNacDzbEwjNb3sXajFdWHQGknWMrUewnRehybZNFpTlHOiXSzqemm+lxb1FZrsNG8pA2aAqmTWkSBQyL43fa5HJJfRPYzgenf00Azt7dMmsOwn+FRYBTQe1jSJQNAQcsqbWt82PBYEbb3IJQW2MHePnUEnq1HCZ8BfgUhl6cssoge8DWi+oRol+D0zEbDdDXpMQJvtu6/vR0teorUYCyD7ny2auErg0+ejzCxTV+b5WO+dRxX8EBbB0D3Cft32mASmCjaEcvSyLrzY7TSBCjw2N0XRbyFW0jBMiQjMOAIVyo02Eoo6G7kP0zLS7fGoUvvhbW1SaCjrk=
+  - secure: pnPy+SAk0Jk3/eM0v+JkcOzLK6wvz56DMRCr34pwuSa4AU64JKqLCdNejBMM0ZDWRidc7zrfHGfeviYmCbdQSlWlQWYjZ2aeDGClq955hCFuNTNQm+36Q9bX20jowF5QAG4C0a91Dl2SWAJKDWRogswPApqQ9aE/jcBQ8QQPG1DOMr+ykvfZ16RFqtAn2i3yCs5a3a8LqTmxPVXZW5R/25SL7f5L4b4Hbpg0opPGApSM6769NENwZIboEvQFWmoAqg/X1GqY/prGt/y69KrIvj5ASq690+UaYAulHNDjXAc3O7KlEHMq3svc4KT3XWzUOCivosggCv8bTPb5lXp2VYXeKPgdKZ6lgm72dAftYCGPSXRtx2K1vKovS9BI+DkCmL5hTVd9+96Gt2vfvEwzcQiaukHEDjjbAz/1DhhMclJ6Mk88V1OawFq74Plulexpy+/Ck/vCr/jX/vrqHxW1qhIaJgNCx+c+D4jgR5vxeEpZZltwelKbMd5X81OmqfqX5p0lyvPYGPO8YWKyDlRbqZclaE4cD0KWTvwnc9wuFGuLVgDmPMd3Du5S6WJY7EaeK5nU/IudAyK6iZULDkGiuCJG9s2EopJIvks/Wl/mjKN8NYthMXnqRBjg4ruB9qEElzdNVUTjazIdHFmNDDPkJyUPYMN12DOYu9L9OlTfbhE=
+  - secure: k70NfyBPQRHYKePMIuO0FSKQoBNhezjT45J5xad8xONnTBFr6gVbcNpaAm+m6eWDi/5G4DEVxEQE1cvohLsWOvrEaBG2KF2fNk/J+tuYW7CFWLr5C1ZojnASP1BdATTXDwumgmcpP6S6ao7t121rGcFE1U6h/uEvGq3hEjK0srNRNdvRWXbFDGwwh3f9Vc6+ik8fQ2F1qc60ghU58NZCPMW/6dTq82DvNTj3s6Fa0hnhJZSCPf5bI8WV/LWMvmV0n0CYNJLGn/ZxUPz0bHO/pG+y1cuY4tLIV4qV8d7ZIPcIDRD5kUqgHAj/vtmyCZclgmBu8X3Uix9qBHau++0k2mD6bK+f0HYXZAYl1o16TkVn0TK83+u+T9MhwUecp4xPVy0m+3R9IYYQXLIX5WX6SdO7DypS+oAjatFd1d0zqCuj2nBwjh1Ty4bmxUZqyzmO2jXTq8dtZ1xDPGi2+wWj4ZoGBOG9OJTWtUi11XgeKpowaUzeEZdbS2vAKZW5W8hozA0gsicW4TO5qLHfjSQJ0/R+mCSl99jbRVp2Mr4610TUnTrcCCChCoPoWHHCknqevlGpynbK+NXh/7VZP+e3t3UAFoxJ25eZ+85lde+uCHGXWl1AzD6OpbOJsTZRLsJk9/od0ixJXB1xgO9MQag6PRtO95o+H8PuHOyzg8jlfNA=
 jobs:
   include:
-    - stage: test
-      script:
-        - docker build .
-    - stage: build
-      script:
-        - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
-        - docker build --tag $IMAGE:commit-$TRAVIS_COMMIT .
-        - docker push $IMAGE:commit-$TRAVIS_COMMIT
-    # - stage: deploy
-    #   script:
-    #     TODO: Install gcloud SDK
-    #     TODO: Install kubectl
-    #     - gcloud config set-project league-sandbox
-    #     - gcloud container clusters get-credentials bots --zone europe-north1-a
-    #     - envsubst '${TRAVIS_COMMIT}' < deployment.yaml.template > deployment.yaml
-    #     - kubectl apply -f deployment.yaml
-
+  - stage: test
+    script:
+    - docker build .
+    - echo $TRAVIS_EVENT_TYPE
+    - echo $TRAVIS_PULL_REQUEST
+    - echo $TRAVIS_PULL_REQUEST_BRANCH
+  - stage: build
+    script:
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
+    - docker build --tag $IMAGE:commit-$TRAVIS_COMMIT .
+    - docker push $IMAGE:commit-$TRAVIS_COMMIT
+  - stage: deploy
+    script:
+    - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+    - source $HOME/google-cloud-sdk/path.bash.inc
+    - gcloud components install kubectl
+    - cd kubernetes
+    - openssl aes-256-cbc -k "$SERVICE_ACCOUNT_PASSWORD" -in service-account.json.enc -out service-account.json -d
+    - gcloud auth activate-service-account contributor-role-bot-deploy@league-sandbox.iam.gserviceaccount.com --key-file=service-account.json --project=league-sandbox
+    - gcloud config set core/project league-sandbox
+    - gcloud config set compute/zone europe-north1-a
+    - gcloud container clusters get-credentials bots
+    - envsubst '${TRAVIS_COMMIT}' < deployment.yaml.template > deployment.yaml
+    - kubectl apply -f deployment.yaml
+    - "curl -H 'Content-Type: application/json' -X POST -d '{\"content\": \"Contributor bot updated, commit hash '$TRAVIS_COMMIT'\"}' $DEPLOY_NOTIFY_WEBHOOK"
 stages:
-  - test
-  - name: build
-    if: branch = master
-  # - name: deploy
-  #   if: branch = master
-
+- test
+- name: build
+  if: branch = master
+- name: deploy
+  if: branch = master
 notifications:
   email: false
