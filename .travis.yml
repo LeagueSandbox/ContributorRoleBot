@@ -15,7 +15,8 @@ jobs:
   include:
   - stage: test
     script:
-    - docker build .
+    - docker build --tag $IMAGE:commit-$TRAVIS_COMMIT .
+    - docker run --entrypoint "/bin/sh" $IMAGE:commit-$TRAVIS_COMMIT -c "pip install -r requirementes-dev.txt && pytest --cov"
   - stage: build
     script:
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
