@@ -35,13 +35,15 @@ class GithubContributorReader(object):
         if commit.commit.author.date > last_commit_date:
             self.contributors[commit.author.login] = commit.commit.author.date
 
-    def get_last_contribution_dates(self):
+    def get_last_contribution_dates(self, filter_repos=None):
         self.contributors = {}
 
         log(f"Fetching all repositories for {self.organization_name}...")
         repositories = self.organization.get_repos("public")
 
         for repository in repositories:
+            if filter_repos and repository not in filter_repos:
+                continue
             log(f"Updating repository {repository.name}")
             self.read_repository(repository)
 
@@ -168,8 +170,12 @@ def log(message, end="\n"):
     sys.stdout.flush()
 
 
+def read_csv(filename):
+    return {row[0]: row[1] for row in csv.reader(open(filename))}
+
+
 def main():
-    usermap = {row[0]: row[1] for row in csv.reader(open("usermap.csv"))}
+    usermap = read_csv("usermap.csv")
 
     github_reader = GithubContributorReader(
         organization_name=ORGANIZATION,
