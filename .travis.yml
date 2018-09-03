@@ -30,7 +30,7 @@ jobs:
       -e TRAVIS_COMMIT=$TRAVIS_COMMIT
       --entrypoint "/bin/sh"
       $IMAGE:commit-$TRAVIS_COMMIT
-      -c "pip install -r requirementes-dev.txt && pytest --cov && pip install codecov && codecov"
+      -c "pip install -r requirements-dev.txt && pytest --cov && pip install codecov && codecov"
   - stage: build
     script:
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
