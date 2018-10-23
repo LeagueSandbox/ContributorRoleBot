@@ -156,6 +156,8 @@ class DiscordContributorBot(discord.Client):
             try:
                 contributors = self.github_reader.get_last_contribution_dates()
                 await self.update_roles(contributors)
+            except GithubException:
+                pass
             except Exception:
                 try:
                     await self.log_exception()
