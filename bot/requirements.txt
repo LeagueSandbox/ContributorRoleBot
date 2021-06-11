@@ -10,4 +10,4 @@ PyJWT==1.6.4
 python-dotenv==0.9.1
 requests==2.20.0
 urllib3==1.23
-websockets==3.4
+websockets==9.1
