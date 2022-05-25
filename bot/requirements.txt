@@ -6,7 +6,7 @@ discord.py==0.16.12
 idna==2.7
 multidict==4.3.1
 PyGithub==1.40
-PyJWT==1.6.4
+PyJWT==2.4.0
 python-dotenv==0.9.1
 requests==2.20.0
 urllib3==1.23
